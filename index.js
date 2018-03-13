@@ -3,359 +3,311 @@
  */
 
 
-/**
- * Object의 깊은 복사를 위한 재귀함수
- *
- * @function _recursiveDeepCopy
- * @memberof objectConverter
- * @param _destination {object} 복사대상
- * @param _target {object} 복사타겟
- * @param _excludeAttrList {Array} 제외할 속성
- * @returns {undefined}
- * @private
- */
-var _recursiveDeepCopy = function (_destination, _target, _excludeAttrList) {
-    switch (getType(_target)) {
-        case "object":
-            var keys = Object.keys(_target);
-            for (var i = 0; i < keys.length; i++) {
-                if (_excludeAttrList.indexOf(keys[i]) === -1) {
-                    switch (getType(_target[keys[i]])) {
+module.exports = (function() {
+    /**
+     * Get type of variable
+     *
+     * @function getType
+     * @memberof objectController
+     * @param target {*}
+     * @returns {String}
+     * @public
+     */
+    var getType = function(target) {
+        var targetType = "";
+        switch (target) {
+            case null:              targetType = "null";        break;
+            case undefined:         targetType = "undefined";   break;
+            default:
+                switch (target.constructor) {
+                    case Function:  targetType = "function";    break;
+                    case Object:    targetType = "object";      break;
+                    case Array:     targetType = "array";       break;
+                    case Number:    targetType = "number";      break;
+                    case Boolean:   targetType = "boolean";     break;
+                    case String:    targetType = "string";      break;
+                    case Date:      targetType = "date";        break;
+                    case Error:     targetType = "error";       break;
+                    case RegExp:    targetType = "regexp";      break;
+                    default:                                    break;
+                }
+        }
+        return targetType;
+    };
+
+
+    var __checkRecursive = function(originTarget, originIndex) {
+        var index = -1;
+        for (var i = 0; i < originIndex.length; i++) {
+            if (originTarget === originIndex[i]) {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    };
+
+    var __deepCopyWithRecursive = function(destination, origin, destinationIndex, originIndex) {
+        switch (getType(origin)) {
+            case "object":
+                destinationIndex.push(destination);
+                originIndex.push(origin);
+
+                var keys = Object.keys(origin);
+                for (var i = 0; i < keys.length; i++) {
+                    switch (getType(origin[keys[i]])) {
                         case "object":
-                            _destination[keys[i]] = {};
-                            _recursiveDeepCopy(_destination[keys[i]], _target[keys[i]], _excludeAttrList);
+                            var recIndex = __checkRecursive(origin[keys[i]], originIndex);
+                            if (recIndex === -1) {
+                                destination[keys[i]] = {};
+                                __deepCopyWithRecursive(destination[keys[i]], origin[keys[i]], destinationIndex, originIndex);
+
+                            } else {
+                                destination[keys[i]] = destinationIndex[recIndex];
+                            }
                             break;
+
                         case "array":
-                            _destination[keys[i]] = [];
-                            _recursiveDeepCopy(_destination[keys[i]], _target[keys[i]], _excludeAttrList);
+                            var recIndex = __checkRecursive(origin[keys[i]], originIndex);
+                            if (recIndex === -1) {
+                                destination[keys[i]] = [];
+                                __deepCopyWithRecursive(destination[keys[i]], origin[keys[i]], destinationIndex, originIndex);
+
+                            } else {
+                                destination[keys[i]] = destinationIndex[recIndex];
+                            }
                             break;
+
                         default:
-                            _destination[keys[i]] = _target[keys[i]];
+                            destination[keys[i]] = origin[keys[i]];
                             break;
                     }
                 }
-            }
-            break;
-        case "array":
-            for (var i = 0; i < _target.length; i++) {
-                switch (getType(_target[i])) {
-                    case "object":
-                        _destination[i] = {};
-                        _recursiveDeepCopy(_destination[i], _target[i], _excludeAttrList);
-                        break;
-                    case "array":
-                        _destination[i] = [];
-                        _recursiveDeepCopy(_destination[i], _target[i], _excludeAttrList);
-                        break;
-                    default:
-                        _destination[i] = _target[i];
-                        break;
+                break;
+
+            case "array":
+                destinationIndex.push(destination);
+                originIndex.push(origin);
+
+                for (var i = 0; i < origin.length; i++) {
+                    switch (getType(origin[i])) {
+                        case "object":
+                            var recIndex = __checkRecursive(origin, originIndex);
+                            if (recIndex === -1) {
+                                destination[i] = {};
+                                __deepCopyWithRecursive(destination[i], origin[i], destinationIndex, originIndex);
+                            } else {
+                                destination[i] = destinationIndex[recIndex];
+                            }
+                            break;
+
+                        case "array":
+                            var recIndex = __checkRecursive(origin, originIndex);
+                            if (recIndex === -1) {
+                                destination[i] = [];
+                                __deepCopyWithRecursive(destination[i], origin[i], destinationIndex, originIndex);
+                            }else {
+                                destination[i] = destinationIndex[recIndex];   
+                            }
+                            break;
+                        default:
+                            destination[i] = origin[i];
+                            break;
+                    }
                 }
-            }
-            break;
-    }
-};
+                break;
 
-
-/**
- * 변수가 어떤 타입인지 획득
- *
- * @function getType
- * @memberof objectConverter
- * @param target {*} 검사할 변수
- * @returns {string}
- * @public
- */
-var getType = function (target) {
-    var type = typeof target;
-    switch (type) {
-        case "object":
-            if (target === null) return "null";
-            else {
-                if (target.constructor === Object) return "object";
-                else return "array";
-            }
-            break;
-        default:
-            return type;
-    }
-};
-
-
-/**
- * 깊은복사하여 새로운 변수를 리턴
- *
- * @function deepCopy
- * @memberof objectConverter
- * @param target {*} 복사할 대상
- * @param excludeAttrList {Array} 제외할 속성
- * @returns {*}
- * @public
- */
-var deepCopy = function (target, excludeAttrList) {
-    excludeAttrList = excludeAttrList || [];
-    var destination = null;
-    switch (getType(target)) {
-        case "object":
-            destination = {};
-            _recursiveDeepCopy(destination, target, excludeAttrList);
-            break;
-        case "array":
-            destination = [];
-            _recursiveDeepCopy(destination, target, excludeAttrList);
-            break;
-        default:
-            destination = target;
-            break;
-    }
-    return destination;
-};
-
-
-/**
- * Object를 String으로 변환
- *
- * @function jsonStringify
- * @memberof objectConverter
- * @param jsonData {object} string 으로 변경할 타겟
- * @param excludeAttrList {Array} 제외할 속성 이름
- * @returns {string}
- * @public
- */
-var jsonStringify = function (jsonData, excludeAttrList) {
-    excludeAttrList = excludeAttrList || [];
-    var cache = [];
-    return JSON.stringify(jsonData, function (key, value) {
-        if (excludeAttrList.indexOf(key) === -1) {
-            if (typeof value === 'object' && value !== null) {
-                if (cache.indexOf(value) === -1) {
-                    // Store value in our collection
-                    cache.push(value);
-                    return value;
-                } else {
-                    // Circular reference found, discard key
-                }
-            } else {
-                return value;
-            }
-        } else {
-            // Exclude attribute found, discard key
+            default:
+                destination = origin;
+                break;
         }
-    });
-};
+        return destination;
+    };
 
 
-/**
- * 두 Object를 합침
- *
- * @function mergeObject
- * @memberof objectConverter
- * @param _destObject {object} 합쳐지는 Object
- * @param _srcObject {object} 합칠 Object
- * @returns {undefined}
- * @public
- */
-var mergeObject = function (_destObject, _srcObject) {
-    try {
-        if (getType(_destObject) === "object" && getType(_srcObject) === "object") {
-            var keys = Object.keys(_srcObject);
+    /**
+     * Deep copy object with recursive
+     *
+     * @function deepCopyWithRecursive
+     * @memberof objectController
+     * @param origin {*} 
+     * @returns {*}
+     * @public
+     */
+    var deepCopyWithRecursive = function(origin) {
+        var destination = null;
+        var destinationIndex = [];
+        var originIndex = [];
+        switch (getType(origin)) {
+            case "object":
+                destination = {};
+                __deepCopyWithRecursive(destination, origin, destinationIndex, originIndex);
+                break;
+            case "array":
+                destination = [];
+                __deepCopyWithRecursive(destination, origin, destinationIndex, originIndex);
+                break;
+            default:
+                destination = origin;
+                break;
+        }
+        return destination;
+    };
+
+
+    /**
+     * Sort object by key's order
+     *
+     * @function sortObjectByKey
+     * @memberof objectController
+     * @param target {Object}
+     * @returns {undefined}
+     * @public
+     */
+    var sortObjectByKey = function(target, order) {
+        if (getType(target) === "object") {
+            var keys = Object.keys(target);
+            if (order === -1)   keys.sort(function(a, b) { return (a > b) ? -1 : (a < b) ? 1 : 0; });
+            else                keys.sort(function(a, b) { return (a < b) ? -1 : (a > b) ? 1 : 0; });
 
             for (var i = 0; i < keys.length; i++) {
-                if (_destObject[keys[i]] === undefined) {
-                    _destObject[keys[i]] = _srcObject[keys[i]];
-                }
+                var tmp = target[keys[i]];
+                delete target[keys[i]];
+                target[keys[i]] = tmp;
             }
         }
-    } catch (ex) {
-        throw ex;
-    }
-};
+    };
 
 
-/**
- * Key를 기준으로 Object를 재귀적으로 정렬
- *
- * @function sortObject
- * @memberof objectConverter
- * @param _object {object} 정렬을 수행할 Object
- * @returns {undefined}
- * @public
- */
-var sortObject = function (_object) {
-    try {
-        if (getType(_object) === "object") {
-            var keys = Object.keys(_object);
-            keys.sort();
-
-            for (var i = 0; i < keys.length; i++) {
-                var tmp = _object[keys[i]];
-                delete _object[keys[i]];
-                _object[keys[i]] = tmp;
-            }
-
-            for (var j = 0; j < keys.length; j++) {
-                sortObject(_object[keys[j]]);
-            }
+    /**
+     * 1D array is composed of object is arranged by object's value of specific key
+     *
+     * @function sortListByObjectValue
+     * @memberof objectController
+     * @param target {Array}
+     * @param key {String}
+     * @param order {Number}
+     * @returns {undefined}
+     * @public
+     */
+    var sortListByObjectValue = function(target, key, order) {
+        if(getType(target) === "array") {
+            if (_order === -1)  target.sort(function(a, b) { return (a[key] > b[key]) ? -1 : (a[key] < b[key]) ? 1 : 0; });
+            else                target.sort(function(a, b) { return (a[key] < b[key]) ? -1 : (a[key] > b[key]) ? 1 : 0; });
         }
-    } catch (ex) {
-        throw ex;
-    }
-};
+    };
 
 
-/**
- * Object로 구성된 배열을 Object의 특정 Value 값을 기준으로 정렬
- *
- * @function sortListByObjectValue
- * @memberof objectConverter
- * @param _list {Array} 정렬할 대상
- * @param _key {string} 기준으로 설정할 Object 의 Key
- * @param _order {number} 오름차순, 내림차순 설정
- * @returns {undefined}
- * @public
- */
-var sortListByObjectValue = function (_list, _key, _order) {
-    try {
-        if (_order === -1) {
-            _list.sort(function (a, b) {
-                return (a[_key] > b[_key]) ? -1 : (a[_key] < b[_key]) ? 1 : 0;
-            });
-
-        } else {
-            _list.sort(function (a, b) {
-                return (a[_key] < b[_key]) ? -1 : (a[_key] > b[_key]) ? 1 : 0;
-            });
+    /**
+     * Get first key of object
+     *
+     * @function getFirstKey
+     * @memberof objectConverter
+     * @param target {Object}
+     * @returns {String}
+     * @public
+     */
+    var getFirstKey = function(target) {
+        if (getType(target) === "object") {
+            return Object.keys(target)[0];
         }
-
-    } catch (ex) {
-        throw ex;
-    }
-};
+    };
 
 
-/**
- * Object의 첫번째 Key를 획득
- *
- * @function getFirstKey
- * @memberof objectConverter
- * @param _object {object} 대상 Object
- * @returns {string}
- * @public
- */
-var getFirstKey = function (_object) {
-    try {
-        if (getType(_object) === "object") {
-            return Object.keys(_object)[0];
+    /**
+     * Get first key's value of object
+     *
+     * @function getFirstValue
+     * @memberof objectController
+     * @param target {Object} 대상 Object
+     * @returns {*}
+     * @public
+     */
+    var getFirstValue = function(target) {
+        if (getType(target) === "object") {
+            return target[Object.keys(target)[0]];
         }
-    } catch (ex) {
-        throw ex;
-    }
-};
+    };
 
 
-/**
- * Object의 첫번째 Key의 Value를 획득
- *
- * @function getFirstValue
- * @memberof objectConverter
- * @param _object {object} 대상 Object
- * @returns {*}
- * @public
- */
-var getFirstValue = function (_object) {
-    try {
-        if (getType(_object) === "object") {
-            return _object[Object.keys(_object)[0]];
-        }
-    } catch (ex) {
-        throw ex;
-    }
-};
-
-
-/**
- * Object의 마지막 Key를 획득
- *
- * @function getLastKey
- * @memberof objectConverter
- * @param _object {object} 대상 Object
- * @returns {string}
- * @public
- */
-var getLastKey = function (_object) {
-    try {
-        if (getType(_object) === "object") {
-            var keys = Object.keys(_object);
+    /**
+     * Get last key of object
+     *
+     * @function getLastKey
+     * @memberof objectController
+     * @param target {Object}
+     * @returns {String}
+     * @public
+     */
+    var getLastKey = function(target) {
+        if (getType(target) === "object") {
+            var keys = Object.keys(target);
             return keys[keys.length - 1];
         }
-    } catch (ex) {
-        throw ex;
-    }
-};
+    };
 
 
-/**
- * Object의 마지막 Key의 Value를 획득
- *
- * @function getLastValue
- * @memberof objectConverter
- * @param _object {object} 대상 Object
- * @returns {*}
- * @public
- */
-var getLastValue = function (_object) {
-    try {
-        if (getType(_object) === "object") {
-            var keys = Object.keys(_object);
-            return _object[keys[keys.length - 1]];
+    /**
+     * Get last key's value of object
+     *
+     * @function getLastValue
+     * @memberof objectController
+     * @param target {Object}
+     * @returns {*}
+     * @public
+     */
+    var getLastValue = function(target) {
+        if (getType(target) === "object") {
+            var keys = Object.keys(target);
+            return target[keys[keys.length - 1]];
         }
-    } catch (ex) {
-        throw ex;
-    }
-};
+    };
 
 
-/**
- * Object에 특정 Key가 존재하는지 검사 (null 검사는 하지 않음)
- *
- * @function checkAttribute
- * @memberof objectConverter
- * @param _object {object} 검사할 대상 Object
- * @param _checkList {Array} 검사할 속성 리스트
- * @returns {boolean}
- * @public
- */
-var checkAttribute = function (_object, _checkList) {
-    try {
-        if (_object === null || _object === undefined) {
-            return false;
 
-        } else {
-            for (var i = 0; i < _checkList.length; i++) {
-                if (_object[_checkList[i]] === undefined) {
-                    return false;
+    /**
+     * Convert object to string without recursive
+     *
+     * @function jsonStringify
+     * @memberof objectController
+     * @param target {Object}
+     * @param excludeKeyList {Array} 
+     * @returns {String}
+     * @public
+     */
+    var jsonStringify = function(target, excludeKeyList) {
+        excludeKeyList = excludeKeyList || [];
+        var cache = [];
+        return JSON.stringify(target, function(key, value) {
+            if (excludeKeyList.indexOf(key) === -1) {
+                if (typeof value === 'object' && value !== null) {
+                    if (cache.indexOf(value) === -1) {
+                        // Store value in our collection
+                        cache.push(value);
+                        return value;
+                    } else {
+                        // Circular reference found, discard key
+                    }
+                } else {
+                    return value;
                 }
-
+            } else {
+                // Exclude attribute found, discard key
             }
-            return true;
-        }
-
-    } catch (ex) {
-        throw ex;
-    }
-};
+        });
+    };
 
 
-module.exports = {
-    getType: getType,
-    deepCopy: deepCopy,
-    mergeObject: mergeObject,
-    jsonStringify: jsonStringify,
-    sortObject: sortObject,
-    sortListByObjectValue: sortListByObjectValue,
-    getFirstKey: getFirstKey,
-    getFirstValue: getFirstValue,
-    getLastKey: getLastKey,
-    getLastValue: getLastValue,
-    checkAttribute: checkAttribute
-};
+
+    return {
+        getType: getType,
+        deepCopyWithRecursive: deepCopyWithRecursive,
+        sortObjectByKey: sortObjectByKey,
+        sortListByObjectValue: sortListByObjectValue,
+        getFirstKey: getFirstKey,
+        getFirstValue: getFirstValue,
+        getLastKey: getLastKey,
+        getLastValue: getLastValue,
+        jsonStringify: jsonStringify
+    };
+})();
