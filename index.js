@@ -297,17 +297,39 @@ module.exports = (function() {
         });
     };
 
+    var appendValueInSameKey = function(destination, source) {
+        if(getType(destination) === "object" && getType(source) === "object") {
+            var keys = Object.keys(source);
+            for(var i=0 ; i<keys.length ; i++){
+                switch(getType(destination[keys[i]])){
+                    case "array":
+                        if(destination[keys[i]].indexOf(source[keys[i]]) === -1) {
+                            destination[keys[i]].push(source[keys[i]]);
+                        }
+                        break;
+                    case "undefined":
+                        destination[keys[i]] = [];
+                        destination[keys[i]].push(source[keys[i]]);
+                        break;
+                    default:
+                        console.error("Destination's data format is wrong when appending value in same key.");
+                        break;
+                }
+            }
+        }
+    };
 
 
     return {
-        getType: getType,
-        deepCopyWithRecursive: deepCopyWithRecursive,
-        sortObjectByKey: sortObjectByKey,
-        sortListByObjectValue: sortListByObjectValue,
-        getFirstKey: getFirstKey,
-        getFirstValue: getFirstValue,
-        getLastKey: getLastKey,
-        getLastValue: getLastValue,
-        jsonStringify: jsonStringify
+        "getType": getType,
+        "deepCopyWithRecursive": deepCopyWithRecursive,
+        "sortObjectByKey": sortObjectByKey,
+        "sortListByObjectValue": sortListByObjectValue,
+        "getFirstKey": getFirstKey,
+        "getFirstValue": getFirstValue,
+        "getLastKey": getLastKey,
+        "getLastValue": getLastValue,
+        "jsonStringify": jsonStringify,
+        "appendValueInSameKey": appendValueInSameKey
     };
 })();
