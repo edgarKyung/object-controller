@@ -3,7 +3,7 @@
  */
 
 
-module.exports = (function() {
+module.exports = (function () {
     /**
      * Get type of variable
      *
@@ -13,41 +13,65 @@ module.exports = (function() {
      * @returns {String}
      * @public
      */
-    var getType = function(target) {
+    var getType = function (target) {
         var targetType = "";
         switch (target) {
-            case null:              targetType = "null";        break;
-            case undefined:         targetType = "undefined";   break;
+            case null:
+                targetType = "null";
+                break;
+            case undefined:
+                targetType = "undefined";
+                break;
             default:
                 switch (target.constructor) {
-                    case Function:  targetType = "function";    break;
-                    case Object:    targetType = "object";      break;
-                    case Array:     targetType = "array";       break;
-                    case Number:    targetType = "number";      break;
-                    case Boolean:   targetType = "boolean";     break;
-                    case String:    targetType = "string";      break;
-                    case Date:      targetType = "date";        break;
-                    case Error:     targetType = "error";       break;
-                    case RegExp:    targetType = "regexp";      break;
-                    default:                                    break;
+                    case Function:
+                        targetType = "function";
+                        break;
+                    case Object:
+                        targetType = "object";
+                        break;
+                    case Array:
+                        targetType = "array";
+                        break;
+                    case Number:
+                        targetType = "number";
+                        break;
+                    case Boolean:
+                        targetType = "boolean";
+                        break;
+                    case String:
+                        targetType = "string";
+                        break;
+                    case Date:
+                        targetType = "date";
+                        break;
+                    case Error:
+                        targetType = "error";
+                        break;
+                    case RegExp:
+                        targetType = "regexp";
+                        break;
+                    default:
+                        break;
                 }
         }
         return targetType;
     };
 
 
-    var __checkRecursive = function(originTarget, originIndex) {
-        var index = -1;
-        for (var i = 0; i < originIndex.length; i++) {
-            if (originTarget === originIndex[i]) {
-                index = i;
-                break;
-            }
-        }
-        return index;
+    var __checkRecursive = function (originTarget, originIndex) {
+        return originIndex.indexOf(originTarget);
+        // var index = -1;
+        // for (var i = 0; i < originIndex.length; i++) {
+        //     if (originTarget === originIndex[i]) {
+        //         index = i;
+        //         break;
+        //     }
+        // }
+        // return index;
     };
 
-    var __deepCopyWithRecursive = function(destination, origin, destinationIndex, originIndex) {
+    var __deepCopyWithRecursive = function (destination, origin, destinationIndex, originIndex) {
         switch (getType(origin)) {
             case "object":
                 destinationIndex.push(destination);
@@ -92,7 +116,7 @@ module.exports = (function() {
                 for (var i = 0; i < origin.length; i++) {
                     switch (getType(origin[i])) {
                         case "object":
-                            var recIndex = __checkRecursive(origin, originIndex);
+                            var recIndex = __checkRecursive(origin[i], originIndex);
                             if (recIndex === -1) {
                                 destination[i] = {};
                                 __deepCopyWithRecursive(destination[i], origin[i], destinationIndex, originIndex);
@@ -102,12 +126,12 @@ module.exports = (function() {
                             break;
 
                         case "array":
-                            var recIndex = __checkRecursive(origin, originIndex);
+                            var recIndex = __checkRecursive(origin[i], originIndex);
                             if (recIndex === -1) {
                                 destination[i] = [];
                                 __deepCopyWithRecursive(destination[i], origin[i], destinationIndex, originIndex);
-                            }else {
-                                destination[i] = destinationIndex[recIndex];   
+                            } else {
+                                destination[i] = destinationIndex[recIndex];
                             }
                             break;
                         default:
@@ -130,11 +154,11 @@ module.exports = (function() {
      *
      * @function deepCopyWithRecursive
      * @memberof objectController
-     * @param origin {*} 
+     * @param origin {*}
      * @returns {*}
      * @public
      */
-    var deepCopyWithRecursive = function(origin) {
+    var deepCopyWithRecursive = function (origin) {
         var destination = null;
         var destinationIndex = [];
         var originIndex = [];
@@ -164,11 +188,15 @@ module.exports = (function() {
      * @returns {undefined}
      * @public
      */
-    var sortObjectByKey = function(target, order) {
+    var sortObjectByKey = function (target, order) {
         if (getType(target) === "object") {
             var keys = Object.keys(target);
-            if (order === -1)   keys.sort(function(a, b) { return (a > b) ? -1 : (a < b) ? 1 : 0; });
-            else                keys.sort(function(a, b) { return (a < b) ? -1 : (a > b) ? 1 : 0; });
+            if (order === -1) keys.sort(function (a, b) {
+                return (a > b) ? -1 : (a < b) ? 1 : 0;
+            });
+            else keys.sort(function (a, b) {
+                return (a < b) ? -1 : (a > b) ? 1 : 0;
+            });
 
             for (var i = 0; i < keys.length; i++) {
                 var tmp = target[keys[i]];
@@ -190,10 +218,14 @@ module.exports = (function() {
      * @returns {undefined}
      * @public
      */
-    var sortListByObjectValue = function(target, key, order) {
-        if(getType(target) === "array") {
-            if (_order === -1)  target.sort(function(a, b) { return (a[key] > b[key]) ? -1 : (a[key] < b[key]) ? 1 : 0; });
-            else                target.sort(function(a, b) { return (a[key] < b[key]) ? -1 : (a[key] > b[key]) ? 1 : 0; });
+    var sortListByObjectValue = function (target, key, order) {
+        if (getType(target) === "array") {
+            if (_order === -1) target.sort(function (a, b) {
+                return (a[key] > b[key]) ? -1 : (a[key] < b[key]) ? 1 : 0;
+            });
+            else target.sort(function (a, b) {
+                return (a[key] < b[key]) ? -1 : (a[key] > b[key]) ? 1 : 0;
+            });
         }
     };
 
@@ -207,7 +239,7 @@ module.exports = (function() {
      * @returns {String}
      * @public
      */
-    var getFirstKey = function(target) {
+    var getFirstKey = function (target) {
         if (getType(target) === "object") {
             return Object.keys(target)[0];
         }
@@ -223,7 +255,7 @@ module.exports = (function() {
      * @returns {*}
      * @public
      */
-    var getFirstValue = function(target) {
+    var getFirstValue = function (target) {
         if (getType(target) === "object") {
             return target[Object.keys(target)[0]];
         }
@@ -239,7 +271,7 @@ module.exports = (function() {
      * @returns {String}
      * @public
      */
-    var getLastKey = function(target) {
+    var getLastKey = function (target) {
         if (getType(target) === "object") {
             var keys = Object.keys(target);
             return keys[keys.length - 1];
@@ -256,13 +288,12 @@ module.exports = (function() {
      * @returns {*}
      * @public
      */
-    var getLastValue = function(target) {
+    var getLastValue = function (target) {
         if (getType(target) === "object") {
             var keys = Object.keys(target);
             return target[keys[keys.length - 1]];
         }
     };
-
 
 
     /**
@@ -271,14 +302,14 @@ module.exports = (function() {
      * @function jsonStringify
      * @memberof objectController
      * @param target {Object}
-     * @param excludeKeyList {Array} 
+     * @param excludeKeyList {Array}
      * @returns {String}
      * @public
      */
-    var jsonStringify = function(target, excludeKeyList) {
+    var jsonStringify = function (target, excludeKeyList) {
         excludeKeyList = excludeKeyList || [];
         var cache = [];
-        return JSON.stringify(target, function(key, value) {
+        return JSON.stringify(target, function (key, value) {
             if (excludeKeyList.indexOf(key) === -1) {
                 if (typeof value === 'object' && value !== null) {
                     if (cache.indexOf(value) === -1) {
@@ -297,13 +328,13 @@ module.exports = (function() {
         });
     };
 
-    var appendValueInSameKey = function(destination, source) {
-        if(getType(destination) === "object" && getType(source) === "object") {
+    var appendValueInSameKey = function (destination, source) {
+        if (getType(destination) === "object" && getType(source) === "object") {
             var keys = Object.keys(source);
-            for(var i=0 ; i<keys.length ; i++){
-                switch(getType(destination[keys[i]])){
+            for (var i = 0; i < keys.length; i++) {
+                switch (getType(destination[keys[i]])) {
                     case "array":
-                        if(destination[keys[i]].indexOf(source[keys[i]]) === -1) {
+                        if (destination[keys[i]].indexOf(source[keys[i]]) === -1) {
                             destination[keys[i]].push(source[keys[i]]);
                         }
                         break;
@@ -319,6 +350,21 @@ module.exports = (function() {
         }
     };
 
+    var addUniqueValueInArray = function (target, value) {
+        if (target.indexOf(value) === -1) {
+            target.push(value);
+        }
+        return target;
+    };
+
+    var removeValueInArray = function (target, value) {
+        var index = target.indexOf(value);
+        if (index !== -1) {
+            target.splice(index, 1);
+        }
+        return target;
+    };
+
 
     return {
         "getType": getType,
@@ -330,6 +376,8 @@ module.exports = (function() {
         "getLastKey": getLastKey,
         "getLastValue": getLastValue,
         "jsonStringify": jsonStringify,
-        "appendValueInSameKey": appendValueInSameKey
+        "appendValueInSameKey": appendValueInSameKey,
+        "addUniqueValueInArray": addUniqueValueInArray,
+        "removeValueInArray": removeValueInArray
     };
 })();
